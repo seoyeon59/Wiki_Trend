@@ -65,7 +65,6 @@ def _json_or_none(value: Any) -> Optional[str]:
         return None
     if isinstance(value, (dict, list)):
         return json.dumps(value, ensure_ascii=False)
-    # Unexpected scalar: store as JSON string for traceability
     return json.dumps(value, ensure_ascii=False)
 
 
@@ -105,6 +104,9 @@ def extract_raw_row(event: Dict[str, Any]) -> Optional[Tuple[Any, ...]]:
     )
     server_script_path = event.get("server_script_path")
 
+    minor_raw = event.get("minor")
+    minor = 1 if minor_raw is True else 0 if minor_raw is False else None
+
     # DB 컬럼 순서에 맞춰 튜플로 반환
     return (
         int(rc_id),
@@ -116,6 +118,7 @@ def extract_raw_row(event: Dict[str, Any]) -> Optional[Tuple[Any, ...]]:
         ts_val,
         event.get("user"),
         1 if event.get("bot") else 0,
+        minor,
         notify_url,
         _json_or_none(event.get("length")),
         _json_or_none(event.get("revision")),
