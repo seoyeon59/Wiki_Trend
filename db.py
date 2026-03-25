@@ -13,7 +13,7 @@ MYSQL_HOST = os.getenv("MYSQL_HOST", "127.0.0.1")
 MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
 MYSQL_USER = os.getenv("MYSQL_USER", "root")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
-MYSQL_DB = os.getenv("MYSQL_DB", "wikitrend")
+MYSQL_DB = os.getenv("MYSQL_DB", "wikitrend_v2")
 # Raw wiki events (no preprocessing at insert time)
 MYSQL_RAW_TABLE = os.getenv("MYSQL_RAW_TABLE", "recentchange_raw")
 # Preprocessed output
@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS `{MYSQL_RAW_TABLE}` (
   `timestamp` BIGINT NULL,
   `user` VARCHAR(255) NULL,
   `bot` TINYINT(1) NOT NULL DEFAULT 0,
+  `minor` TINYINT(1) NULL,
   `notify_url` TEXT NULL,
   `length` JSON NULL,
   `revision` JSON NULL,
@@ -124,11 +125,11 @@ def ensure_schema_exists() -> None:
 RAW_INSERT_SQL = f"""
 INSERT IGNORE INTO `{MYSQL_RAW_TABLE}` (
   id, type, namespace, title, title_url, comment, timestamp,
-  user, bot, notify_url, length, revision,
+  user, bot, minor, notify_url, length, revision,
   server_url, server_name, server_script_path, wiki, parsedcomment
 ) VALUES (
   %s, %s, %s, %s, %s, %s, %s,
-  %s, %s, %s, CAST(%s AS JSON), CAST(%s AS JSON),
+  %s, %s, %s, %s, CAST(%s AS JSON), CAST(%s AS JSON),
   %s, %s, %s, %s, %s
 )
 """.strip()
