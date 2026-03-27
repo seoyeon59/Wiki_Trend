@@ -4,7 +4,11 @@ import numpy as np
 import re
 
 # 데이터셋 불러오기
-df = pd.read_csv('wiki_trend.csv')
+df1 = pd.read_csv('wiki_trend.csv')
+df2 = pd.read_csv('wiki_trend_2.csv')
+
+# 데이터셋 합치기
+df = pd.concat([df1, df2], ignore_index=True)
 
 # df 값 보기
 print(f"df.shape : {df.shape}")

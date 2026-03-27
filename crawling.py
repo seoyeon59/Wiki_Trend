@@ -2,8 +2,8 @@ import json
 import requests
 
 # 1. 설정
-output_file = "enwiki_raw_log.txt"  # 또는 .jsonl
-target_count = 3000
+output_file = "enwiki_raw_log_2.txt"  # 또는 .jsonl
+target_count = 10000
 current_count = 0
 url = 'https://stream.wikimedia.org/v2/stream/recentchange'
 

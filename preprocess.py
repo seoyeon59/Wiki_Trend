@@ -4,7 +4,9 @@ import json
 import numpy as np
 
 # 파일 불러오기
-file_path = "enwiki_raw_log.txt"
+# file_path = "enwiki_raw_log.txt"
+file_path = "enwiki_raw_log_2.txt"
+
 df = pd.read_json(file_path, lines=True)
 
 # 데이터 구조 확인
@@ -126,4 +128,4 @@ print(f"현재 남은 컬럼: {list(df.columns)}")
 
 
 # csv 파일 생성
-df.to_csv('wiki_trend.csv', index=False, encoding='utf-8')
+df.to_csv('wiki_trend_2.csv', index=False, encoding='utf-8')
