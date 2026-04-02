@@ -4,7 +4,7 @@ import json
 import numpy as np
 
 # 파일 불러오기
-file_path = "enwiki_raw_log.txt"
+file_path = "../data/enwiki_raw_log.txt"
 df = pd.read_json(file_path, lines=True)
 
 # 데이터 구조 확인

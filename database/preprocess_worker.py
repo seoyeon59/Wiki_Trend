@@ -9,7 +9,7 @@ if _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
 
 import pandas as pd
-import db
+from database import db
 
 
 def split_length(row: Any) -> pd.Series:

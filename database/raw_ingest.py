@@ -16,7 +16,7 @@ if _SCRIPT_DIR not in sys.path:
 import pymysql
 import requests
 
-import db
+from database import db
 
 # ---------------------------------------------------------------------------
 # 설정값

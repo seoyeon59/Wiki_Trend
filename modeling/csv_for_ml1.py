@@ -4,7 +4,7 @@ import numpy as np
 import re
 
 # 데이터셋 불러오기
-df = pd.read_csv('wiki_trend.csv')
+df = pd.read_csv('../data/wiki_trend.csv')
 
 # df 값 보기
 print(f"df.shape : {df.shape}")
