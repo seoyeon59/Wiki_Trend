@@ -6,7 +6,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 
 # csv 파일 불러오기
-df = pd.read_csv('ml.csv')
+df = pd.read_csv('dataset/ml.csv')
 
 
 ## [STEP 1] 분석용 핵심 변수 생성

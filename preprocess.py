@@ -5,7 +5,7 @@ import numpy as np
 
 # 파일 불러오기
 # file_path = "enwiki_raw_log.txt"
-file_path = "enwiki_raw_log_2.txt"
+file_path = "dataset/enwiki_raw_log_2.txt"
 
 df = pd.read_json(file_path, lines=True)
 
