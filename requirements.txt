@@ -1,3 +1,5 @@
 requests
 pymysql
 pandas
+fastapi
+redis
