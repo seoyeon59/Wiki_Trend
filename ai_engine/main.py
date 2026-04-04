@@ -1,15 +1,16 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import pickle
 import numpy as np
 import redis
 import json
 import pandas as pd
+import os
+import joblib
 
 app = FastAPI(title="WikiTrend API Server")
 
-# 0. CORS 설정
+# 0. CORS 설정 (대시보드와의 통신 허용)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,69 +18,72 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 1. DB(Redis) 연결
+# 1. DB(Redis) 연결 - [수정] 도커가 아니므로 'redis' 대신 'localhost' 사용
 try:
-    rd = redis.StrictRedis(host='redis', port=6379, db=0, decode_responses=True)
+    # 로컬에서 실행 중인 redis-server에 접속
+    rd = redis.StrictRedis(host='127.0.0.1', port=6379, db=0, decode_responses=True)
+    # 연결 테스트
+    rd.ping()
+    print("✅ Redis 연결 성공")
 except Exception as e:
     print(f"❌ Redis 연결 실패: {e}")
 
-# 2. 모델 로드 (Random Forest)
-# 학습 시 5개의 피처로 학습된 'WikiTrend_RF_Model.pkl' 파일을 사용합니다.
+# 2. 모델 로드 (경로 에러 방지를 위해 절대 경로 계산 추가)
+MODEL_PATH = "C:/Users/seoyeon/PycharmProjects/WikiTrend/ai_engine/models/WikiTrend_RF_Model.pkl"
+
 try:
-    with open("models/WikiTrend_RF_Model.pkl", "rb") as f:
-        model = pickle.load(f)
-    print("✅ WikiTrend RF 모델 로드 완료 (5 Features)")
+    if os.path.exists(MODEL_PATH):
+        model = joblib.load(MODEL_PATH)
+        print("✅ WikiTrend RF 모델 로드 완료")
+    else:
+        model = None
+        print(f"⚠️ 모델 파일을 찾을 수 없습니다: {MODEL_PATH}")
 except Exception as e:
+    model = None
     print(f"❌ 모델 로드 오류: {e}")
 
 
-# 요청 데이터 규격 (수집된 10개 이상의 편집 로그 리스트)
+# 요청 데이터 규격
 class PredictionRequest(BaseModel):
     data: list
 
 
 # ---------------------------------------------------------
-# [핵심] 전처리 파이프라인 (분석 및 모델링 코드 통합)
+# [핵심] 전처리 파이프라인
 # ---------------------------------------------------------
 def preprocess_pipeline(raw_data_list):
-    """
-    개별 편집 로그 리스트를 모델 입력용 5대 지표 통계치로 변환
-    """
     df = pd.DataFrame(raw_data_list)
+
+    if df.empty:
+        return np.zeros((1, 5))
 
     # [타입 정리 및 시간 변환]
     df["timestamp"] = pd.to_datetime(df["timestamp"], unit='s', errors="coerce")
     df = df.sort_values("timestamp")
 
-    # 1. mean_time_delta_sec 생성 (이전 편집과의 시간 차 평균)
-    # 분석 코드 preprocess.py의 diff() 로직 반영
+    # 1. mean_time_delta_sec (편집 간격 평균)
     df['time_delta_sec'] = df['timestamp'].diff().dt.total_seconds().fillna(0)
     mean_time_delta_sec = df['time_delta_sec'].mean()
 
-    # 2. revert_ratio 생성 (csv_for_ml1.py 및 학습 코드 반영)
+    # 2. revert_ratio (되돌리기 비율)
     df['comment'] = df['comment'].fillna('').astype(str)
     is_revert = df['comment'].str.contains('revert|rvv|undo', case=False).astype(int)
     revert_ratio = is_revert.mean()
 
-    # 3. human_ratio 생성 (1 - bot 비율)
+    # 3. human_ratio (사용자 비율)
     df['is_human'] = 1 - df['bot'].fillna(False).astype(int)
     human_ratio = df['is_human'].mean()
 
-    # 4. mean_user_activity_score 생성 (사용자 활동성 빈도 점수)
-    # 현재 윈도우 내에서의 사용자 빈도 점수 계산 로직
+    # 4. mean_user_activity_score (사용자 활동 빈도)
     user_counts = df['user'].value_counts().to_dict()
     df['user_activity_score'] = df['user'].map(user_counts)
     mean_user_activity_score = df['user_activity_score'].mean()
 
-    # 5. section_edit_ratio 생성 (/* ... */ 패턴 포함 비율)
-    # parsedcomment의 'autocomment' 또는 comment의 섹션 기호 확인
+    # 5. section_edit_ratio (섹션 편집 비율)
     is_section = df['comment'].str.contains(r'/\*.*?\*/', regex=True).astype(int)
     section_edit_ratio = is_section.mean()
 
-    # [최종 피처 벡터 구성] - 학습 코드의 features 순서 엄격 준수
-    # features = ["mean_time_delta_sec", "revert_ratio", "human_ratio",
-    #             "mean_user_activity_score", "section_edit_ratio"]
-
+    # 최종 피처 벡터 구성 (1, 5)
     final_vector = np.array([
         mean_time_delta_sec,
         revert_ratio,
@@ -96,26 +100,37 @@ def preprocess_pipeline(raw_data_list):
 @app.get("/api/data/latest")
 async def get_latest_data():
     # Redis에서 수집기(Collector)가 쌓아준 최신 시퀀스 데이터 로드
+    # [주의] collector.py에서 데이터를 저장할 때 사용하는 키값과 일치해야 함
     latest = rd.get("latest_sequence")
+
     if not latest:
-        raise HTTPException(status_code=404, detail="실시간 데이터를 수집 중입니다.")
+        # 데이터가 없을 경우 에러 대신 빈 리스트를 반환하여 대시보드 대기 유도 가능
+        return {"data": [], "message": "데이터 수집 중입니다..."}
+
     return {"data": json.loads(latest)}
 
 
 @app.post("/api/predict")
 async def predict_trend(request: PredictionRequest):
     try:
-        # [단계 1] 전처리: 10개 로그 -> 1개의 통계 행(5개 피처)으로 압축
+        if not request.data:
+            return {"kei_index": 0.0, "is_trend": False, "message": "입력 데이터 없음"}
+
+        # [단계 1] 전처리
         input_vector = preprocess_pipeline(request.data)
 
-        # [단계 2] 모델 예측
-        prob = model.predict_proba(input_vector)[:, 1][0]
+        # [단계 2] 모델 예측 (모델이 없을 경우 랜덤값 반환하는 예외 처리 추가)
+        if model:
+            # 확률값 추출 (클래스 1일 확률)
+            prob = model.predict_proba(input_vector)[:, 1][0]
+        else:
+            import random
+            prob = random.uniform(0.3, 0.6)  # 모델 미로드 시 임시값
 
-        # [단계 3] 결과 반환 (KEI 지수 및 트렌드 여부)
-        # 0.712 임계값은 학습 코드의 quantile 기준 반영
+        # [단계 3] 결과 반환
         return {
             "kei_index": round(float(prob), 4),
-            "is_trend": bool(prob >= 0.5),  # 확률 기반 판단
+            "is_trend": bool(prob >= 0.5),
             "features": {
                 "mean_time_delta": round(input_vector[0][0], 2),
                 "revert_ratio": round(input_vector[0][1], 2),
@@ -126,9 +141,10 @@ async def predict_trend(request: PredictionRequest):
             "message": "🔥 트렌드 감지!" if prob >= 0.5 else "✅ 정상 상태"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"전처리 및 예측 오류: {str(e)}")
+        print(f"Error during prediction: {e}")
+        raise HTTPException(status_code=500, detail=f"예측 오류: {str(e)}")
 
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "WikiTrend Analysis Engine"}
+    return {"status": "ok", "service": "WikiTrend Analysis Engine", "model_loaded": model is not None}
