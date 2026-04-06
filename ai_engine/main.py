@@ -21,6 +21,7 @@ app.add_middleware(
 # 1. DB(Redis) 연결 - [수정] 도커가 아니므로 'redis' 대신 'localhost' 사용
 try:
     # 로컬에서 실행 중인 redis-server에 접속
+
     rd = redis.StrictRedis(host='127.0.0.1', port=6379, db=0, decode_responses=True)
     # 연결 테스트
     rd.ping()
@@ -28,9 +29,9 @@ try:
 except Exception as e:
     print(f"❌ Redis 연결 실패: {e}")
 
-# 2. 모델 로드 (경로 에러 방지를 위해 절대 경로 계산 추가)
-MODEL_PATH = "C:/Users/seoyeon/PycharmProjects/WikiTrend/ai_engine/models/WikiTrend_RF_Model.pkl"
-
+# 2. 모델 로드
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "ai_engine/models/WikiTrend_RF_Model.pkl")
 try:
     if os.path.exists(MODEL_PATH):
         model = joblib.load(MODEL_PATH)
