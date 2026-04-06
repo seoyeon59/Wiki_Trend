@@ -38,7 +38,7 @@ def start_collecting():
                             r.ltrim("recent_changes", 0, 99999)
 
                             # main.py를 위한 데이터 묶음 만들기
-                            recent_list = r.lrange("recent_changes", 0, 19)
+                            recent_list = r.lrange("recent_changes", 0, 20)
                             sequence_data = [json.loads(item) for item in recent_list]
 
                             # 시간순으로 정렬

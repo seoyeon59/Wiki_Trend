@@ -107,11 +107,16 @@ async def get_latest_data():
     # [주의] collector.py에서 데이터를 저장할 때 사용하는 키값과 일치해야 함
     latest = rd.get("latest_sequence")
 
+    total_count = rd.llen("recent_changes")
+
     if not latest:
         # 데이터가 없을 경우 에러 대신 빈 리스트를 반환하여 대시보드 대기 유도 가능
         return {"data": [], "message": "데이터 수집 중입니다..."}
 
-    return {"data": json.loads(latest)}
+    return {
+        "data": json.loads(latest),
+        "total_count": total_count
+    }
 
 
 @app.post("/api/predict")

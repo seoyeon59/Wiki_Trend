@@ -45,15 +45,19 @@ def fetch_api_data():
         if res_data.status_code != 200:
             return None, None
 
-        logs = res_data.json().get("data", [])
+        result_json = res_data.json()
+        logs = result_json.json().get("data", [])
+        total_count = result_json.get("total_count", 0) # 전체 개수 가져오기
 
         res_pred = requests.post(f"{API_URL}/api/predict", json={"data": logs}, timeout=2)
         if res_pred.status_code != 200:
-            return logs, None
+            return logs, None, total_count
 
-        return logs, res_pred.json()
+        return logs, res_pred.json(), total_count
     except:
-        return None, None
+        return None, None, 0
+
+
 
 # ---------------- UI ----------------
 
@@ -66,7 +70,7 @@ with col_h2:
     st.info(f"📡 System Active | {datetime.now().strftime('%H:%M:%S')}")
 
 # 데이터 가져오기
-logs, result = fetch_api_data()
+logs, result, total_accumulated = fetch_api_data()
 
 # 'realtime_data'라는 이름으로 logs를 연결해줍니다. (하단 카드용)
 realtime_data = logs if logs else []
@@ -154,7 +158,7 @@ if result:
 
     # Today's Monitored -> 현재 Redis에서 가져온 총 로그 계수 (또는 누적치)
     monitored_count = len(realtime_data)
-    c1.metric("Current Window Log", f"{monitored_count}개")
+    c1.metric("Current Window Log", f"{total_accumulated}개")
 
     # Active Editors -> 현재 데이터 내의 유니크한 사용자 수
     active_users = len(set(d.get('user') for d in realtime_data))
