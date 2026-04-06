@@ -52,6 +52,9 @@ class PredictionRequest(BaseModel):
 # [핵심] 전처리 파이프라인
 # ---------------------------------------------------------
 def preprocess_pipeline(raw_data_list):
+    if len(raw_data_list) < 2:  # 데이터가 2개 미만이면 계산 불가
+        return np.zeros((1, 5))
+
     df = pd.DataFrame(raw_data_list)
 
     if df.empty:

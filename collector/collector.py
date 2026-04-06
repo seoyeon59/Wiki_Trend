@@ -3,9 +3,11 @@ import requests
 import redis
 import time
 
+from altair import sequence
+
 # 1. Redis 연결 설정
 # Docker 환경이면 host="redis", 로컬 테스트면 host="localhost"
-r = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+r = redis.Redis(host="127.0.0.1", port=6379, db=0, decode_responses=True)
 
 # 2. 위키피디아 실시간 스트림 URL
 url = 'https://stream.wikimedia.org/v2/stream/recentchange'
@@ -32,9 +34,17 @@ def start_collecting():
                             # 3. Redis에 데이터 저장
                             # 'recent_changes'라는 리스트의 왼쪽에 데이터 삽입 (LPUSH)
                             r.lpush("recent_changes", json.dumps(data))
+                            # 최신 10000개까지만 유지 (메모리 관리)
+                            r.ltrim("recent_changes", 0, 99999)
 
-                            # 최신 100개까지만 유지 (메모리 관리)
-                            r.ltrim("recent_changes", 0, 99)
+                            # main.py를 위한 데이터 묶음 만들기
+                            recent_list = r.lrange("recent_changes", 0, 19)
+                            sequence_data = [json.loads(item) for item in recent_list]
+
+                            # 시간순으로 정렬
+                            sequence_data.sort(key=lambda x: x.get('timestamp', 0))
+
+                            r.set("latest_sequence", json.dumps(sequence_data))
 
                             print(f"🚀 Saved: {data.get('title')[:30]}...")
 
