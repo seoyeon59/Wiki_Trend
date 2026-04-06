@@ -31,7 +31,8 @@ except Exception as e:
 
 # 2. 모델 로드
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "ai_engine/models/WikiTrend_RF_Model.pkl")
+MODEL_PATH = os.path.join(BASE_DIR, "models", "WikiTrend_RF_Model.pkl")
+
 try:
     if os.path.exists(MODEL_PATH):
         model = joblib.load(MODEL_PATH)
@@ -100,23 +101,32 @@ def preprocess_pipeline(raw_data_list):
 
 
 # 3. 엔드포인트 작성
-
 @app.get("/api/data/latest")
 async def get_latest_data():
-    # Redis에서 수집기(Collector)가 쌓아준 최신 시퀀스 데이터 로드
-    # [주의] collector.py에서 데이터를 저장할 때 사용하는 키값과 일치해야 함
+    # 1. Redis에서 데이터 가져오기
     latest = rd.get("latest_sequence")
 
+    # 2. Redis에 누적된 전체 데이터 행 개수 가져오기 (LLEN 사용)
+    # 수집기(collector)가 데이터를 넣는 리스트 키 이름이 "recent_changes"인지 확인하세요!
     total_count = rd.llen("recent_changes")
 
+    # 3. 데이터가 없을 경우의 처리
     if not latest:
-        # 데이터가 없을 경우 에러 대신 빈 리스트를 반환하여 대시보드 대기 유도 가능
-        return {"data": [], "message": "데이터 수집 중입니다..."}
+        return {
+            "data": [],
+            "total_count": total_count,  # 데이터는 없어도 쌓인 개수는 보낼 수 있음
+            "message": "데이터 수집 중입니다..."
+        }
 
-    return {
-        "data": json.loads(latest),
-        "total_count": total_count
-    }
+    # 4. 정상 응답
+    try:
+        return {
+            "data": json.loads(latest),
+            "total_count": total_count
+        }
+    except Exception as e:
+        print(f"JSON Parsing Error: {e}")
+        return {"data": [], "total_count": total_count, "error": "데이터 형식이 올바르지 않습니다."}
 
 
 @app.post("/api/predict")

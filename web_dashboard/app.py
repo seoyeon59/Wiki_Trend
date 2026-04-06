@@ -26,7 +26,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-API_URL = "http://localhost:8000"
+API_URL = "http://127.0.0.1:8000"
 
 if 'history' not in st.session_state:
     st.session_state.history = []
@@ -43,10 +43,10 @@ def fetch_api_data():
     try:
         res_data = requests.get(f"{API_URL}/api/data/latest", timeout=2)
         if res_data.status_code != 200:
-            return None, None
+            return None, None, 0
 
         result_json = res_data.json()
-        logs = result_json.json().get("data", [])
+        logs = result_json.get("data", [])
         total_count = result_json.get("total_count", 0) # 전체 개수 가져오기
 
         res_pred = requests.post(f"{API_URL}/api/predict", json={"data": logs}, timeout=2)
