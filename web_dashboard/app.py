@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import requests
 import pandas as pd
@@ -12,10 +13,10 @@ st.markdown("""
     <style>
     .stApp { background-color: #030712; color: white; }
     div[data-testid="stMetricValue"] { color: #3b82f6 !important; font-weight: bold; }
-    .stCard { 
-        background-color: rgba(17, 24, 39, 0.5); 
-        border: 1px solid #1f2937; 
-        padding: 20px; 
+    .stCard {
+        background-color: rgba(17, 24, 39, 0.5);
+        border: 1px solid #1f2937;
+        padding: 20px;
         border-radius: 12px;
     }
     .title-text {
@@ -26,7 +27,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-API_URL = "http://127.0.0.1:8000"
+API_URL = os.getenv("AI_ENGINE_URL", "http://127.0.0.1:8000")
 
 if 'history' not in st.session_state:
     st.session_state.history = []

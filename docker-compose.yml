@@ -1,0 +1,99 @@
+services:
+
+  # ─── Redis (메모리 데이터베이스) ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: wiki_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes   # AOF 영속성 활성화
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ─── Collector (위키독스 수집 무한 루프) ────────────────────────────────────
+  collector:
+    build:
+      context: .          # 루트에서 빌드 (requirements.txt 접근)
+      dockerfile: collector/Dockerfile
+    container_name: wiki_collector
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── AI Engine (키워드 추출 HTTP 서버) ──────────────────────────────────────
+  ai_engine:
+    build:
+      context: .
+      dockerfile: ai_engine/Dockerfile
+    container_name: wiki_ai_engine
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # ─── Web Dashboard (Streamlit 대시보드) ─────────────────────────────────────
+  web_dashboard:
+    build:
+      context: .
+      dockerfile: web_dashboard/Dockerfile
+    container_name: wiki_dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - AI_ENGINE_URL=http://ai_engine:8000
+    depends_on:
+      ai_engine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ─── Frontend (React + nginx) ────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://ai_engine:8000
+    container_name: wiki_frontend
+    ports:
+      - "3000:80"      # 호스트 3000 → 컨테이너 nginx 80
+    depends_on:
+      - web_dashboard
+    restart: unless-stopped
+
+# ─── 볼륨 ────────────────────────────────────────────────────────────────────
+volumes:
+  redis_data:
+    driver: local
+
+# ─── 네트워크 (모든 서비스가 같은 네트워크 공유) ──────────────────────────────
+networks:
+  default:
+    name: wiki_trend_network
+
