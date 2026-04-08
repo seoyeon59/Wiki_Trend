@@ -1,13 +1,17 @@
 import json
 import requests
 import redis
+import os
 import time
 
 from altair import sequence
 
 # 1. Redis 연결 설정
 # Docker 환경이면 host="redis", 로컬 테스트면 host="localhost"
-r = redis.Redis(host="127.0.0.1", port=6379, db=0, decode_responses=True)
+redis_host = os.getenv("REDIS_HOST", "localhost")
+redis_port = int(os.getenv("REDIS_PORT", 6379))
+
+r = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
 
 # 2. 위키피디아 실시간 스트림 URL
 url = 'https://stream.wikimedia.org/v2/stream/recentchange'

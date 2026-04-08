@@ -1,1 +1,42 @@
+# Jupyter
 .ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+.venv/
+env/
+.env
+*.env
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.cache/
+.pnpm-store/
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Redis 로컬 데이터
+redis_data/
+
+# 모델 파일 (대용량 — Git LFS 사용 권장)
+ai_engine/models/*.pkl

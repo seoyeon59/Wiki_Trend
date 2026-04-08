@@ -18,11 +18,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 1. DB(Redis) 연결 - [수정] 도커가 아니므로 'redis' 대신 'localhost' 사용
+# 1. DB(Redis) 연결 - 환경변수로 host 설정
 try:
-    # 로컬에서 실행 중인 redis-server에 접속
+    redis_host = os.getenv("REDIS_HOST", "localhost")
+    redis_port = int(os.getenv("REDIS_PORT", 6379))
 
-    rd = redis.StrictRedis(host='127.0.0.1', port=6379, db=0, decode_responses=True)
+    rd = redis.StrictRedis(host=redis_host, port=redis_port, db=0, decode_responses=True)
     # 연결 테스트
     rd.ping()
     print("✅ Redis 연결 성공")
