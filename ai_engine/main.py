@@ -18,14 +18,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 1. DB(Redis) 연결 - 환경변수로 host 설정
+# 1. DB(Redis) 연결 - 환경변수에서 정보 가져오기
+REDIS_HOST = os.environ.get("https://engaged-whippet-99192.upstash.io")
+REDIS_PORT = os.environ.get('REDIS_PORT', 6379) # 보통 Upstash는 6379입니다
+REDIS_PW = os.environ.get('gQAAAAAAAYN4AAIncDIxNTAzNTg3ZWJkYmM0NTYyYWYyMWU1MzVjYjBjMDRhYnAyOTkxOTI')
+
+# Redis 연결
 try:
-    redis_host = os.getenv("REDIS_HOST", "localhost")
-    redis_port = int(os.getenv("REDIS_PORT", 6379))
+    r = redis.StrictRedis(
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        password=REDIS_PW,
+        decode_responses=True
+    )
 
     rd = redis.StrictRedis(host=redis_host, port=redis_port, db=0, decode_responses=True)
     # 연결 테스트
-    rd.ping()
+    r.ping()
     print("✅ Redis 연결 성공")
 except Exception as e:
     print(f"❌ Redis 연결 실패: {e}")
