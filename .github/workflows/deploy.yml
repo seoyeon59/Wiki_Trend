@@ -23,26 +23,22 @@ jobs:
         workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
         service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-    # [2] 도커 이미지 빌드 및 푸시 (4개 서비스 각각 진행)
+# [2] 도커 이미지 빌드 및 푸시 (3개 서비스)
     - name: Build and Push Docker Images
       run: |
         gcloud auth configure-docker --quiet
         
-        # 1번 서비스 
-        docker build -f ./ai-engine/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wiki-ai:latest ./ai-folder
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wiki-ai:latest
+        # 1. 대시보드 서비스 (Dashboard)
+        docker build -f ./dashboard/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-dashboard:latest ./dashboard
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-dashboard:latest
         
-        # 2번 서비스 
-        docker build -f ./web_dashboard/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wiki-back:latest ./back-folder
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wiki-back:latest
+        # 2. AI 엔진 서비스 (AI Engine)
+        docker build -f ./ai-engine/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-ai-engine:latest ./ai-engine
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-ai-engine:latest
         
-        # 3번 서비스 
-        docker build -f ./frontend/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wiki-front:latest ./front-folder
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wiki-front:latest
-        
-        # 4번 서비스 
-        docker build -f ./collector/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wiki-data:latest ./data-folder
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wiki-data:latest
+        # 3. 데이터 수집기 서비스 (Collector)
+        docker build -f ./collector/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-collector:latest ./collector
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-collector:latest
 
     # [3] 쿠버네티스 배포 (모든 서비스 재시작)
     - name: Deploy to GKE
