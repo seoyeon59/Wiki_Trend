@@ -2,12 +2,12 @@ name: GKE Deploy
 
 on:
   push:
-    branches: [ "master" ] # 브랜치 이름이 'main'인지 'master'인지 꼭 확인하세요!
+    branches: [ "main" ] 
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions: # [추가] WIF 인증을 위해 이 권한 설정이 꼭 필요합니다!
+    permissions:
       contents: 'read'
       id-token: 'write'
 
