@@ -1,0 +1,31 @@
+name: Auto Deploy to GKE
+
+on:
+  push:
+    branches: [ "master" ]  # master 브랜치에 코드가 올라오면 실행
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 1. GCP 인증 (서연님의 키 설정 필요)
+    - name: Google Auth
+      uses: 'google-github-actions/auth@v1'
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    # 2. 도커 이미지 빌드 및 푸시
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wiki-trend-app:latest .
+        gcloud auth configure-docker
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wiki-trend-app:latest
+
+    # 3. 쿠버네티스에 배포 명령
+    - name: Deploy to GKE
+      run: |
+        gcloud container clusters get-credentials my-cluster --zone us-central1-a
+        kubectl rollout restart deployment/wiki-trend-deployment
