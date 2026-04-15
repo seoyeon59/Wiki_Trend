@@ -26,12 +26,9 @@ jobs:
     # [2] 도커 이미지 빌드 및 푸시
     - name: Build and Push Docker Images
       run: |
-        # 1. 기존 도커 인증 정보를 싹 지우고 초기화 (강력 처방)
-        rm -f ~/.docker/config.json
-  
-        # gcloud가 발행한 토큰을 docker login에 바로 전달합니다.
-        gcloud auth print-access-token | docker login -u oauth2access_token --password-stdin https://us-central1-docker.pkg.dev
-
+        # 1. 기존 인증 설정 초기화 (가장 중요!)
+        gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+       
         # requirements.txt를 각 폴더로 복사
         cp requirements.txt ./web_dashboard/
         cp requirements.txt ./ai_engine/
