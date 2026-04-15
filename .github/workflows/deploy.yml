@@ -26,25 +26,19 @@ jobs:
     # [2] 도커 이미지 빌드 및 푸시
     - name: Build and Push Docker Images
       run: |
-        gcloud auth configure-docker us-docker.pkg.dev --quiet
-        gcloud auth configure-docker gcr.io --quiet
+        # 1. 인증 설정을 리전 주소에 맞게 초기화
+        gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
         
-        # requirements.txt를 각 폴더로 복사
-        cp requirements.txt ./web_dashboard/
-        cp requirements.txt ./ai_engine/
-        cp requirements.txt ./collector/
+        # 2. 이미지 주소에서 gcr.io를 빼고 리전 기반 주소로 변경
+        # 형식: [지역]-docker.pkg.dev/[프로젝트ID]/[저장소이름]/[이미지명]
         
-        # 1. 웹 대시보드 빌드
-        docker build -f ./web_dashboard/Dockerfile -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-dashboard:latest ./web_dashboard
-        docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-dashboard:latest
+        # 웹 대시보드
+        docker build -f ./web_dashboard/Dockerfile -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wiki-repo/dashboard:latest ./web_dashboard
+        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wiki-repo/dashboard:latest
         
-        # 2. AI 엔진 빌드
-        docker build -f ./ai_engine/Dockerfile -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-ai-engine:latest ./ai_engine
-        docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-ai-engine:latest
-        
-        # 3. 데이터 수집기 빌드
-        docker build -f ./collector/Dockerfile -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-collector:latest ./collector
-        docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-collector:latest
+        # AI 엔진
+        docker build -f ./ai_engine/Dockerfile -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wiki-repo/ai-engine:latest ./ai_engine
+        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wiki-repo/ai-engine:latest
     
     # [3] 쿠버네티스 배포 (서비스 업데이트)
     - name: Deploy to GKE
