@@ -26,7 +26,7 @@ jobs:
     # [2] 도커 이미지 빌드 및 푸시
     - name: Build and Push Docker Images
       run: |
-        gcloud auth configure-docker --quiet
+        gcloud auth configure-docker us-docker.pkg.dev --quiet
         
         # requirements.txt를 각 폴더로 복사
         cp requirements.txt ./web_dashboard/
