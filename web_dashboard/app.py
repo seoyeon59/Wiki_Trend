@@ -49,10 +49,30 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+
+# ─────────────────────────────────────────────
+# Redis 설정 및 연결 (노트북 AI Engine 대체)
+# ─────────────────────────────────────────────
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PW = os.getenv("REDIS_PASSWORD")
+REDIS_PORT = 6379
+
+@st.cache_resource # 연결 유지
+def get_redis_connection():
+    return redis.StrictRedis(
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        password=REDIS_PW,
+        decode_responses=True
+    )
+
+r = get_redis_connection()
+
+
 # ─────────────────────────────────────────────
 # 설정 / 세션 상태
 # ─────────────────────────────────────────────
-API_URL = os.getenv("AI_ENGINE_URL", "http://127.0.0.1:8000")
+# API_URL = os.getenv("AI_ENGINE_URL", "http://127.0.0.1:8000")
 
 # history 포맷이 구버전(string time)이면 초기화
 if 'history' not in st.session_state:
@@ -71,6 +91,33 @@ if 'title_events_4h' not in st.session_state:
 # ─────────────────────────────────────────────
 # 유틸 함수 (기존 로직 유지)
 # ─────────────────────────────────────────────
+def fetch_data_and_analyze():
+    try:
+        # 1. Redis에서 최신 로그 100개 직접 가져오기
+        raw_logs = r.lrange("wiki_edits", 0, 99)
+        logs = [json.loads(log) for log in raw_logs]
+
+        # 전체 누적 카운트 가져오기 (수집기가 기록함)
+        total_count = int(r.get("total_edits_count") or 0)
+
+        if not logs:
+            return None, None, 0
+
+        # 2. 분석 로직 (KEI 계산)
+        # 예시: 최근 100개 로그 중 중복 타이틀 비율 등으로 KEI 계산 (서연님의 로직에 맞게 수정 가능)
+        unique_titles = len(set(l.get('title') for l in logs))
+        # 단순 예시: 유니크한 제목이 적을수록(집중될수록) KEI가 높다고 가정
+        kei_index = max(0.1, 1.0 - (unique_titles / 100))
+
+        result = {
+            "kei_index": kei_index,
+            "status": "Active"
+        }
+        return logs, result, total_count
+    except Exception as e:
+        st.error(f"데이터 분석 중 오류: {e}")
+        return None, None, 0
+
 def get_status_info(level):
     level_val = level * 100
     if level_val < 33:
@@ -84,6 +131,25 @@ def hex_to_rgb(hex_color):
     h = hex_color.lstrip('#')
     return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
 
+def fetch_data_from_redis():
+    try:
+        # 1. Redis에서 최신 데이터 100개 가져오기 (노트북 대신 직접 수행!)
+        logs = r.lrange("wiki_edits", 0, 99)
+        import json
+        logs = [json.loads(log) for log in logs]
+
+        # 2. 분석 로직 (KEI 계산 등 기존 AI Engine이 하던 일을 여기서 직접)
+        # 예: 간단한 KEI 계산 (데이터가 있으면 0.8, 없으면 0.2 등 로직 구현)
+        total_count = len(logs)
+        kei_index = 0.5 # 여기에 실제 분석 알고리즘 코드를 넣으면 됩니다.
+
+        result = {
+            "kei_index": kei_index,
+            "status": "Active"
+        }
+        return logs, result, total_count
+    except Exception as e:
+        return None, None, 0
 
 def fetch_api_data():
     try:
@@ -154,7 +220,7 @@ st.markdown('<hr style="border:1px solid rgba(255,255,255,0.08); margin: 16px 0 
 # ─────────────────────────────────────────────
 # 데이터 패칭 (기존 로직 유지)
 # ─────────────────────────────────────────────
-logs, result, total_accumulated = fetch_api_data()
+logs, result, total_accumulated = fetch_data_and_analyze()
 realtime_data = logs if logs else []
 
 # ─────────────────────────────────────────────
