@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import time
+import redis
 
 # ─────────────────────────────────────────────
 # 페이지 기본 설정 및 전역 CSS
