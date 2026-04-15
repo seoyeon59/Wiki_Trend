@@ -29,7 +29,7 @@ jobs:
         gcloud auth configure-docker --quiet
         
         # 1. 대시보드 (폴더명이 dashboard 가 맞는지 확인!)
-        docker build -f ./dashboard/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-dashboard:latest ./dashboard
+        docker build -f ./web_dashboard/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-dashboard:latest ./dashboard
         docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-dashboard:latest
         
         # 2. AI 엔진 (폴더명이 ai-engine 이 맞는지 확인!)
