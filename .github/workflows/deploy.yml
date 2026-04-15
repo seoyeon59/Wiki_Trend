@@ -28,23 +28,23 @@ jobs:
       run: |
         gcloud auth configure-docker --quiet
         
-        # ⭐ 중요: 루트에 있는 requirements.txt를 각 폴더로 복사 (재료 배달)
+        # requirements.txt를 각 폴더로 복사
         cp requirements.txt ./web_dashboard/
         cp requirements.txt ./ai_engine/
         cp requirements.txt ./collector/
         
         # 1. 웹 대시보드 빌드
-        docker build -f ./web_dashboard/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-dashboard:latest ./web_dashboard
-        docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wikitrend-dashboard:latest
+        docker build -f ./web_dashboard/Dockerfile -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-dashboard:latest ./web_dashboard
+        docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-dashboard:latest
         
         # 2. AI 엔진 빌드
-        docker build -f ./ai_engine/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-ai-engine:latest ./ai_engine
-        docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wikitrend-ai-engine:latest
+        docker build -f ./ai_engine/Dockerfile -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-ai-engine:latest ./ai_engine
+        docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-ai-engine:latest
         
         # 3. 데이터 수집기 빌드
-        docker build -f ./collector/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/wikitrend-collector:latest ./collector
-        docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/wikitrend-collector:latest
-
+        docker build -f ./collector/Dockerfile -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-collector:latest ./collector
+        docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gcr.io/wikitrend-collector:latest
+    
     # [3] 쿠버네티스 배포 (서비스 업데이트)
     - name: Deploy to GKE
       run: |
