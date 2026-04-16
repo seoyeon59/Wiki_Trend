@@ -1,0 +1,36 @@
+# ─── Web Framework ───────────────────────────────────────────────────────────
+fastapi
+uvicorn[standard]
+streamlit
+
+# ─── Data / ML ────────────────────────────────────────────────────────────────
+scikit-learn
+numpy
+pandas
+
+# ─── Visualization ────────────────────────────────────────────────────────────
+plotly
+altair
+
+# ─── Redis / HTTP ────────────────────────────────────────────────────────────
+redis
+requests
+
+# ─── Utilities ────────────────────────────────────────────────────────────────
+attrs
+certifi
+charset-normalizer
+idna
+Jinja2
+jsonschema
+jsonschema-specifications
+MarkupSafe
+narwhals
+packaging
+Pillow
+python-dateutil
+referencing
+rpds-py
+six
+typing_extensions
+urllib3
