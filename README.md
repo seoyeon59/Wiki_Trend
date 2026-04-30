@@ -34,14 +34,12 @@ Wiki Trend는 전 세계 지식의 보고인 영문 위키피디아(English Wiki
 *   **Target:** 영문 위키피디아(`en.wikipedia`) 프로젝트 데이터 선별 수집
 *   **Technique:** 고성능 Collector 모듈을 통한 무중단 스트림 리스닝 및 실시간 Feature 정제
 
----
 
 ### ⚙️ Processing 요약 설명
 *   **Feature Engineering:** 편집 전후 길이 차이(`len_diff`), 편집 간격(`time_delta`), 사용자 유형(Bot/Human) 등 핵심 변수 추출
 *   **Sliding Window:** 10초 단위 윈도우 집계를 통해 시계열 데이터의 추세 정보 생성
 *   **Data Storage:** 분석된 고빈도 데이터를 Redis StatefulSet에 캐싱하여 대시보드 응답 속도 최적화
 
----
 
 ### 🧠 Machine Learning 요약 설명
 
@@ -57,8 +55,8 @@ Wiki Trend는 전 세계 지식의 보고인 영문 위키피디아(English Wiki
 *   **Feature Importance:** RandomForest Regressor를 통해 각 편집 피처가 '실제 이슈 발생'에 미치는 영향력을 분석
 *   **Trend Prediction:** 학습된 모델을 바탕으로 현재 유입되는 데이터가 일시적인 노이즈인지, 혹은 글로벌 트렌드로 발전할 이슈인지 실시간 판별
 
----
-### 도커 및 쿠버네티스 사용 방법
+
+### 도커 및 쿠버네티스 요약 설명
 (이건 아직 채워넣기 전)
 
 
